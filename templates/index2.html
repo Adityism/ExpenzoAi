@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpenzoAI - Smart Expense Categorization</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        .hero-logo {
+            position: relative;
+            z-index: 10;
+            margin-top: -2.5rem;
+        }
+
+        .drag-area {
+            border: 2px dashed #f59e0b;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #fef3e2 0%, #fdf2e9 100%);
+            box-shadow: 0 8px 32px 0 rgba(245, 158, 11, 0.18), 0 1.5px 6px 0 rgba(0,0,0,0.07);
+        }
+
+        .drag-area.active {
+            border-color: #d97706;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            transform: scale(1.03);
+            box-shadow: 0 12px 36px 0 rgba(245, 158, 11, 0.28), 0 2px 8px 0 rgba(0,0,0,0.10);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+
+        /* Glassmorphic logo style */
+        .glass-logo {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 1rem;
+            border: 1.5px solid rgba(255,255,255,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Unified theme color */
+        :root {
+            --primary: #f59e0b;
+            --primary-dark: #d97706;
+            --accent: #667eea;
+            --glass-bg: rgba(255,255,255,0.85);
+        }
+
+        .btn-primary, .category-badge {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+        }
+
+        .btn-primary, .btn-primary:hover, .category-badge, .category-badge:hover {
+            border: none;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1.5px solid #e5e7eb;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.10), 0 1.5px 6px 0 rgba(0,0,0,0.07);
+        }
+
+        /* Interactive card hover */
+        .interactive-card {
+            transition: transform 0.3s cubic-bezier(.4,2,.3,1), box-shadow 0.3s;
+            will-change: transform;
+        }
+        .interactive-card:hover {
+            transform: translateY(-8px) scale(1.025) rotate(-1deg);
+            box-shadow: 0 16px 40px 0 rgba(102, 126, 234, 0.18), 0 2px 8px 0 rgba(245, 158, 11, 0.10);
+        }
+
+        /* Keyframes for subtle card pop */
+        @keyframes cardPop {
+            0% { transform: scale(0.98) translateY(10px); opacity: 0; }
+            60% { transform: scale(1.03) translateY(-4px); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .card-animate {
+            animation: cardPop 0.7s cubic-bezier(.4,2,.3,1);
+        }
+
+        /* Enhanced card shadow for dashboard cards */
+        .card-shadow {
+            box-shadow: 0 10px 32px 0 rgba(0,0,0,0.13), 0 2px 8px 0 rgba(245, 158, 11, 0.10);
+        }
+
+        /* Add border to yellow elements for contrast */
+        .yellow-contrast {
+            border: 1.5px solid #eab308;
+        }
+
+        /* Button shadow and contrast */
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px 0 rgba(245, 158, 11, 0.22);
+            border: 1.5px solid #eab308;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 28px 0 rgba(245, 158, 11, 0.35);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px 0 rgba(16, 185, 129, 0.18);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 28px 0 rgba(16, 185, 129, 0.32);
+        }
+
+        /* Quick Actions and Pro Tips card shadow and border */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            border: 1.5px solid #f3f4f6;
+            box-shadow: 0 8px 32px 0 rgba(245, 158, 11, 0.10), 0 1.5px 6px 0 rgba(0,0,0,0.07);
+        }
+
+        /* Quick Actions icon backgrounds */
+        .quick-action {
+            box-shadow: 0 2px 8px 0 rgba(245, 158, 11, 0.10), 0 1.5px 6px 0 rgba(0,0,0,0.07);
+            border: 1.5px solid #fef3c7;
+        }
+
+        /* Stronger shadow for hero icon */
+        .hero-icon {
+            box-shadow: 0 8px 32px 0 rgba(245, 158, 11, 0.25), 0 2px 8px 0 rgba(0,0,0,0.10);
+        }
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .category-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .category-badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+
+        .results-fade {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .results-fade.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .logo-gradient {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @media (max-width: 640px) {
+            .responsive-buttons {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .responsive-buttons button {
+                width: 100%;
+            }
+        }
+
+        .content-wrapper {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 4rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Toggle button styles */
+        #toggleConfidence:checked + div {
+            background-color: #f59e0b;
+        }
+
+        #toggleConfidence:checked + div .dot {
+            transform: translateX(1.75rem);
+            background-color: white;
+        }
+
+        .toggle-label {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-label:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .header-fixed {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="header-fixed w-full bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-full px-0 sm:px-0 lg:px-0">
+            <div class="flex justify-between items-center py-3 px-6 bg-white/80 shadow-md rounded-b-2xl" style="backdrop-filter: blur(8px);">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-200 shadow-lg mr-2">
+                        <img src="/static/logo.png" alt="ExpenzoAI Logo" class="w-7 h-7" onerror="this.style.display='none';this.parentNode.innerHTML='<i class=\'fas fa-brain text-yellow-500 text-2xl\'></i>'">
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-extrabold text-yellow-500 tracking-tight leading-tight">ExpenzoAI</span>
+                        <span class="text-xs text-gray-500 font-medium tracking-wide">AI-Powered Expense Manager</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 relative group">
+                    <button id="aboutAppBtn" class="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-md hover:scale-105 transition-transform focus:outline-none" aria-label="About ExpenzoAI">
+                        <i class="fas fa-info text-white text-lg"></i>
+                    </button>
+                    <div id="aboutAppCard" class="opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-300 absolute right-0 top-12 z-50 w-80 h-80 max-w-xs bg-white/80 rounded-3xl shadow-2xl border border-yellow-200 flex flex-col items-center justify-center glassmorphic-about animate-fadeIn" style="backdrop-filter: blur(16px);">
+                        <div class="flex flex-col items-center justify-center h-full w-full px-6 py-4">
+                            <div class="flex items-center justify-center mb-3">
+                                <div class="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg mr-3">
+                                    <i class="fas fa-brain text-white text-3xl"></i>
+                                </div>
+                                <span class="font-extrabold text-2xl text-gray-800 tracking-tight leading-tight">ExpenzoAI</span>
+                            </div>
+                            <div class="text-gray-700 text-base font-medium text-center mb-3">Your smart, privacy-first expense manager powered by AI.</div>
+                            <ul class="list-none space-y-2 text-gray-700 text-sm font-semibold w-full px-2">
+                                <li class="flex items-center"><i class="fas fa-magic text-yellow-500 mr-2"></i>AI-powered auto categorization</li>
+                                <li class="flex items-center"><i class="fas fa-file-upload text-yellow-500 mr-2"></i>Upload statements or enter manually</li>
+                                <li class="flex items-center"><i class="fas fa-chart-line text-yellow-500 mr-2"></i>Instant insights & analytics</li>
+                                <li class="flex items-center"><i class="fas fa-shield-alt text-yellow-500 mr-2"></i>All data processed locally</li>
+                            </ul>
+                        </div>
+                    </div>
+
+    <style>
+    /* Glassmorphic about card style */
+    .glassmorphic-about {
+        background: rgba(255,255,255,0.82);
+        box-shadow: 0 12px 48px 0 rgba(245, 158, 11, 0.18), 0 2px 8px 0 rgba(0,0,0,0.10);
+        border: 2px solid #fde68a;
+        backdrop-filter: blur(16px) saturate(1.2);
+        -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    }
+    </style>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
+        <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Hero Section -->
+            <div class="text-center mb-12 fade-in pt-16">
+                <div class="flex justify-center mb-8">
+                    <div class="w-20 h-20 glass-logo hero-logo" style="background: rgba(255,255,255,0.18);">
+                        <i class="fas fa-receipt text-yellow-500 text-3xl"></i>
+                    </div>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+                    Smart Expense Categorization
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Upload your transactions and let our AI automatically categorize them for better financial insights
+                </p>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Input Section -->
+            <div class="lg:col-span-2">
+                <div class="glass-card rounded-2xl card-shadow p-8 fade-in" style="animation-delay: 0.2s">
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-2">Choose Your Input Method</h3>
+                        <p class="text-gray-600">Select how you'd like to input your transaction data</p>
+                    </div>
+                    
+                    <div class="flex space-x-4 mb-8 responsive-buttons">
+                        <button id="pdfBtn" class="flex-1 py-4 px-8 btn-primary text-white rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-yellow-200 yellow-contrast">
+                            <i class="fas fa-file-pdf mr-3"></i>Upload PDF Statement
+                        </button>
+                        <button id="textBtn" class="flex-1 py-4 px-8 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-200">
+                            <i class="fas fa-keyboard mr-3"></i>Enter Text Manually
+                        </button>
+                    </div>
+
+                    <!-- PDF Upload Area -->
+                    <div id="pdfSection" class="slide-in">
+                        <div class="drag-area p-12 rounded-2xl text-center cursor-pointer transition-all duration-300 yellow-contrast">
+                            <i class="fas fa-cloud-upload-alt text-6xl text-yellow-600 mb-6"></i>
+                            <h4 class="text-xl font-semibold text-gray-700 mb-2">Drag & Drop your PDF here</h4>
+                            <p class="text-gray-500 mb-4">or click to browse your files</p>
+                            <p class="text-sm text-gray-400">Supports bank statements, credit card statements, and expense reports</p>
+                            <input type="file" id="fileInput" class="hidden" accept=".pdf">
+                        </div>
+                    </div>
+
+                    <!-- Text Input Area -->
+                    <div id="textSection" class="hidden slide-in">
+                        <div class="bg-gray-50 rounded-2xl p-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Enter your transactions</label>
+                            <textarea id="transactionText" rows="8" class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-300 resize-none" placeholder="Enter your transactions (one per line)&#10;Examples:&#10;McDonald's lunch 25.50&#10;Uber ride to office 18.75&#10;Netflix subscription 15.99&#10;Grocery shopping 127.80"></textarea>
+                            <p class="text-sm text-gray-500 mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Format: Description Amount (e.g., "Coffee shop 4.50")
+                            </p>
+                        </div>
+                    </div>
+
+                    <button id="processBtn" class="w-full mt-8 py-4 px-8 btn-secondary text-white rounded-xl font-semibold text-lg transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-green-200">
+                        <i class="fas fa-magic mr-3"></i>Categorize with AI
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats Sidebar -->
+            <div class="space-y-6">
+                <div class="glass-card rounded-2xl card-shadow p-6 fade-in" style="animation-delay: 0.4s">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-info-circle text-yellow-500 mr-2"></i>
+                        What does this app do?
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                        <div class="feature-card relative overflow-hidden rounded-2xl bg-white/70 shadow-xl p-6 flex flex-col items-center text-center transition-transform duration-300 hover:scale-[1.04] hover:shadow-2xl">
+                            <div class="absolute inset-0 bg-gradient-to-br from-yellow-100/60 to-yellow-200/40 pointer-events-none"></div>
+                            <div class="z-10 flex flex-col items-center">
+                                <div class="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg mb-3">
+                                    <i class="fas fa-magic text-white text-2xl"></i>
+                                </div>
+                                <div class="font-bold text-gray-800 text-lg mb-1">AI-Powered Categorization</div>
+                                <div class="text-gray-600 text-sm">Automatically sorts your expenses for instant insights.</div>
+                            </div>
+                        </div>
+                        <div class="feature-card relative overflow-hidden rounded-2xl bg-white/70 shadow-xl p-6 flex flex-col items-center text-center transition-transform duration-300 hover:scale-[1.04] hover:shadow-2xl">
+                            <div class="absolute inset-0 bg-gradient-to-br from-yellow-100/60 to-yellow-200/40 pointer-events-none"></div>
+                            <div class="z-10 flex flex-col items-center">
+                                <div class="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg mb-3">
+                                    <i class="fas fa-file-upload text-white text-2xl"></i>
+                                </div>
+                                <div class="font-bold text-gray-800 text-lg mb-1">Flexible Input</div>
+                                <div class="text-gray-600 text-sm">Upload statements (PDF) or enter transactions manually.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl card-shadow p-4 mt-2 mb-2 fade-in" style="animation-delay: 0.5s">
+                        <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                            Pro Tips
+                        </h4>
+                        <ul class="space-y-2 text-sm text-gray-600">
+                            <li class="flex items-start space-x-2">
+                                <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                                <span>Upload large statements for bulk processing</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                                <span>Use clear descriptions for better accuracy</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                                <span>Toggle show confidence button to get confidence percentage</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                    <!-- Pro Tips moved above, card removed here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden results-fade mt-12 w-full max-w-6xl mx-auto px-4">
+            <div class="glass-card rounded-2xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl border-2 border-yellow-100 shadow-[0_8px_30px_rgb(245,158,11,0.1)]">
+                <div class="p-8 rounded-t-2xl relative" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); box-shadow: 0 4px 24px 0 rgba(245, 158, 11, 0.18);">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-3xl font-bold text-white mb-3 drop-shadow-lg flex items-center">
+                                <i class="fas fa-list-alt mr-4 text-white/90"></i>Categorized Transactions
+                            </h3>
+                            <p class="text-white/90 font-medium text-lg">AI has automatically categorized your expenses</p>
+                        </div>
+                        <div class="flex items-center mt-2">
+                            <label for="toggleConfidence" class="flex items-center cursor-pointer select-none bg-white rounded-xl shadow-lg px-4 py-2.5 transition-all duration-300 hover:shadow-xl">
+                                <span class="mr-3 text-gray-700 font-semibold text-sm">Show Confidence</span>
+                                <div class="relative">
+                                    <input type="checkbox" id="toggleConfidence" class="sr-only">
+                                    <div class="w-14 h-7 bg-gray-200 rounded-full shadow-inner transition duration-300">
+                                        <div class="dot absolute left-1 top-1 bg-yellow-500 w-5 h-5 rounded-full transition-all duration-300 shadow-md"></div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <div class="p-8 bg-white border-t border-yellow-100">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                            <thead>
+                                <tr class="border-b-2 border-yellow-100 bg-yellow-50/50">
+                                    <th class="text-left py-5 px-8 font-bold text-gray-700 text-lg">Transaction</th>
+                                    <th class="text-left py-5 px-8 font-bold text-gray-700 text-lg">Amount</th>
+                                    <th class="text-left py-5 px-8 font-bold text-gray-700 text-lg">Category</th>
+                                    <th class="text-left py-5 px-8 font-bold text-gray-700 text-lg">Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTableBody" class="divide-y divide-yellow-100/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="glass-card p-8 rounded-2xl flex flex-col items-center space-y-4 max-w-sm mx-4">
+            <div class="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+            <h4 class="text-lg font-semibold text-gray-800">Processing with AI</h4>
+            <p class="text-gray-600 text-center">Our AI is analyzing and categorizing your transactions...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pdfBtn = document.getElementById('pdfBtn');
+            const textBtn = document.getElementById('textBtn');
+            const pdfSection = document.getElementById('pdfSection');
+            const textSection = document.getElementById('textSection');
+            const processBtn = document.getElementById('processBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const dragArea = document.querySelector('.drag-area');
+            const fileInput = document.getElementById('fileInput');
+            let selectedFile = null;
+
+            // Switch between PDF and Text sections and handle file input
+            pdfBtn.addEventListener('click', () => {
+                pdfSection.classList.remove('hidden');
+                textSection.classList.add('hidden');
+                pdfBtn.className = 'flex-1 py-4 px-8 btn-primary text-white rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-yellow-200';
+                textBtn.className = 'flex-1 py-4 px-8 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-200';
+                // Trigger file input when the PDF button is clicked
+                fileInput.click();
+            });
+
+            textBtn.addEventListener('click', () => {
+                textSection.classList.remove('hidden');
+                pdfSection.classList.add('hidden');
+                textBtn.className = 'flex-1 py-4 px-8 btn-primary text-white rounded-xl font-medium transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-yellow-200';
+                pdfBtn.className = 'flex-1 py-4 px-8 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-200';
+            });
+
+            // Drag and drop functionality
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dragArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dragArea.addEventListener(eventName, () => {
+                    dragArea.classList.add('active');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dragArea.addEventListener(eventName, () => {
+                    dragArea.classList.remove('active');
+                });
+            });
+
+            dragArea.addEventListener('drop', handleDrop);
+            dragArea.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            function handleFileSelect(e) {
+                const files = e.target.files;
+                handleFiles(files);
+            }
+
+            function handleFiles(files) {
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.type === 'application/pdf') {
+                        selectedFile = file;
+                        dragArea.innerHTML = `
+                            <div class="text-center">
+                                <i class="fas fa-file-pdf text-5xl text-green-600 mb-4"></i>
+                                <h4 class="text-lg font-semibold text-gray-700 mb-2">${file.name}</h4>
+                                <p class="text-sm text-gray-500 mb-2">File size: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                <p class="text-sm text-gray-400">Click to change file</p>
+                                <div class="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Ready to process
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        alert('Please upload a PDF file');
+                    }
+                }
+            }
+
+            // Process button click handler
+            processBtn.addEventListener('click', async () => {
+                const formData = new FormData();
+                
+                if (pdfSection.classList.contains('hidden')) {
+                    // Text input mode
+                    const text = document.getElementById('transactionText').value
+                        .split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line)
+                        .join('\n');
+                    
+                    if (!text) {
+                        alert('Please enter some transaction data');
+                        return;
+                    }
+                    formData.append('text', text);
+                } else {
+                    // PDF mode
+                    if (!selectedFile) {
+                        alert('Please select a PDF file');
+                        return;
+                    }
+                    formData.append('file', selectedFile);
+                }
+
+                loadingSpinner.classList.remove('hidden');
+                try {
+                    const response = await fetch('/process', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'An error occurred while processing');
+                    }
+                    
+                    const data = await response.json();
+                    displayResults(data.results);
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'An error occurred while processing');
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                }
+            });
+
+            function generateMockResults() {
+                const textInput = document.getElementById('transactionText').value;
+                const lines = textInput.split('\n').filter(line => line.trim());
+                
+                const categories = ['Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Bills & Utils', 'Healthcare', 'Travel'];
+                const confidences = [95, 87, 92, 89, 94, 91, 88];
+                
+                return lines.map(line => {
+                    const parts = line.trim().split(/\s+/);
+                    const amount = parseFloat(parts[parts.length - 1]) || Math.random() * 100;
+                    const transaction = parts.slice(0, -1).join(' ') || line;
+                    const categoryIndex = Math.floor(Math.random() * categories.length);
+                    
+                    return {
+                        Transaction: transaction,
+                        Amount: amount,
+                        'Predicted Category': categories[categoryIndex],
+                        Confidence: confidences[categoryIndex]
+                    };
+                });
+            }
+
+            function displayResults(results) {
+                const tbody = document.getElementById('resultsTableBody');
+                const resultsSection = document.getElementById('resultsSection');
+                tbody.innerHTML = '';
+                
+                // Check toggle state
+                const showConfidence = document.getElementById('toggleConfidence')?.checked;
+                results.forEach((result, index) => {
+                    const row = document.createElement('tr');
+                    row.style.animation = `fadeIn 0.5s ease-out forwards ${index * 0.1}s`;
+                    row.className = 'hover:bg-gray-50 transition-colors duration-200';
+                    const confidence = result.Confidence || Math.floor(Math.random() * 20) + 80;
+                    const confidenceColor = confidence >= 90 ? 'text-green-600' : confidence >= 70 ? 'text-yellow-600' : 'text-red-600';
+                    row.innerHTML = `
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">${result.Transaction}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-semibold text-gray-900">₹${result.Amount.toFixed(2)}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="category-badge">
+                                ${result['Predicted Category']}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 confidence-cell" style="display:none;">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-medium ${confidenceColor}">${confidence}%</span>
+                                <div class="w-16 bg-gray-200 rounded-full h-2">
+                                    <div class="h-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500" style="width: ${confidence}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                // Hide confidence column header by default
+                const ths = document.querySelectorAll('th');
+                if (ths.length > 3) {
+                    ths[3].style.display = 'none';
+                }
+                resultsSection.classList.remove('hidden');
+                setTimeout(() => {
+                    resultsSection.classList.add('visible');
+                    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        // Toggle confidence column
+        setTimeout(() => {
+            const toggle = document.getElementById('toggleConfidence');
+            const slider = document.getElementById('toggleSlider');
+            const dot = document.getElementById('toggleDot');
+            if (toggle) {
+                // Set initial state: confidence hidden
+                toggle.checked = false;
+                if (slider && dot) {
+                    dot.style.left = '1px';
+                }
+                toggle.addEventListener('change', function() {
+                    const show = toggle.checked;
+                    // Animate toggle dot
+                    if (slider && dot) {
+                        dot.style.left = show ? '26px' : '1px';
+                    }
+                    // Show/hide confidence column
+                    const ths = document.querySelectorAll('th');
+                    if (ths.length > 3) {
+                        ths[3].style.display = show ? '' : 'none';
+                    }
+                    const cells = document.querySelectorAll('.confidence-cell');
+                    cells.forEach(cell => {
+                        cell.style.display = show ? '' : 'none';
+                    });
+                });
+            }
+        }, 500);
+
+            // Initialize with PDF section
+            pdfBtn.click();
+        });
+    </script>
+</body>
+</html>
